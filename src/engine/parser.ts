@@ -826,14 +826,14 @@ function extractColumnsRecursive(node: any, columns: Set<string>): void {
   }
 
   // Handle GROUP BY
-  if (node.groupby) {
+  if (node.groupby && Array.isArray(node.groupby)) {
     for (const group of node.groupby) {
       extractColumnsRecursive(group, columns);
     }
   }
 
   // Handle ORDER BY
-  if (node.orderby) {
+  if (node.orderby && Array.isArray(node.orderby)) {
     for (const order of node.orderby) {
       extractColumnsRecursive(order.expr || order, columns);
     }

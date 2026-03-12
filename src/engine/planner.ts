@@ -285,7 +285,7 @@ function buildSelectPlan(ast: ParserAST): PlanNode {
   }
 
   // Step 3: GROUP BY with aggregates
-  if (ast.groupby && ast.groupby.length > 0) {
+  if (ast.groupby && Array.isArray(ast.groupby) && ast.groupby.length > 0) {
     currentNode = createGroupByNode(ast.groupby, ast.columns, currentNode);
 
     // Step 4: HAVING clause (filter after grouping)
@@ -312,7 +312,7 @@ function buildSelectPlan(ast: ParserAST): PlanNode {
   }
 
   // Step 7: ORDER BY (SORT)
-  if (ast.orderby && ast.orderby.length > 0) {
+  if (ast.orderby && Array.isArray(ast.orderby) && ast.orderby.length > 0) {
     currentNode = createSortNode(ast.orderby, currentNode);
   }
 

@@ -26,7 +26,6 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { useQueryStore, useUIStore } from '@/stores';
 import { PlanNode } from './PlanNode';
-import { DataFlowAnimation } from './DataFlowAnimation';
 import { cn } from '@/utils';
 import type { PlanNode as PlanNodeType, QueryPlan } from '@/types';
 
@@ -370,8 +369,6 @@ export function PlanTree({ className }: PlanTreeProps) {
             maskColor={maskColor}
           />
         )}
-
-        <DataFlowAnimation currentNodeId={currentStepNodeId} />
       </ReactFlow>
     </div>
   );

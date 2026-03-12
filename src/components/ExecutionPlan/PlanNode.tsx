@@ -1,8 +1,9 @@
 /**
- * @fileoverview Plan node component for the execution plan visualizer.
+ * @fileoverview Compact plan node component for the execution plan visualizer.
  *
  * Renders individual nodes in the query execution plan tree with
  * operation-specific styling, symbols, and status indicators.
+ * Designed to be compact to reduce visual clutter.
  *
  * @module components/ExecutionPlan/PlanNode
  */
@@ -47,21 +48,21 @@ interface PlanNodeData {
  * Visual configuration for each operation type.
  * Maps operation types to their symbols and color classes.
  */
-const operationStyles: Record<OperationType, { symbol: string; colorClass: string }> = {
-  TABLE_SCAN: { symbol: '\u{1F4C4}', colorClass: 'bg-blue-500' },
-  SELECTION: { symbol: '\u03C3', colorClass: 'bg-amber-500' },
-  PROJECTION: { symbol: '\u03C0', colorClass: 'bg-green-500' },
-  JOIN: { symbol: '\u22C8', colorClass: 'bg-purple-500' },
-  CROSS_JOIN: { symbol: '\u00D7', colorClass: 'bg-purple-400' },
-  GROUP_BY: { symbol: '\u03B3', colorClass: 'bg-pink-500' },
-  DISTINCT: { symbol: '\u03B4', colorClass: 'bg-cyan-500' },
-  SORT: { symbol: '\u03C4', colorClass: 'bg-orange-500' },
-  LIMIT: { symbol: '\u230A\u230B', colorClass: 'bg-indigo-500' },
-  UNION: { symbol: '\u222A', colorClass: 'bg-red-500' },
-  INTERSECT: { symbol: '\u2229', colorClass: 'bg-red-400' },
-  EXCEPT: { symbol: '\u2212', colorClass: 'bg-red-300' },
-  AGGREGATE: { symbol: '\u03A3', colorClass: 'bg-pink-400' },
-  SUBQUERY: { symbol: '\u2282', colorClass: 'bg-violet-500' },
+const operationStyles: Record<OperationType, { symbol: string; colorClass: string; bgClass: string }> = {
+  TABLE_SCAN: { symbol: '\u{1F4C4}', colorClass: 'text-blue-400', bgClass: 'bg-blue-500/15' },
+  SELECTION: { symbol: '\u03C3', colorClass: 'text-amber-400', bgClass: 'bg-amber-500/15' },
+  PROJECTION: { symbol: '\u03C0', colorClass: 'text-green-400', bgClass: 'bg-green-500/15' },
+  JOIN: { symbol: '\u22C8', colorClass: 'text-purple-400', bgClass: 'bg-purple-500/15' },
+  CROSS_JOIN: { symbol: '\u00D7', colorClass: 'text-purple-300', bgClass: 'bg-purple-400/15' },
+  GROUP_BY: { symbol: '\u03B3', colorClass: 'text-pink-400', bgClass: 'bg-pink-500/15' },
+  DISTINCT: { symbol: '\u03B4', colorClass: 'text-cyan-400', bgClass: 'bg-cyan-500/15' },
+  SORT: { symbol: '\u03C4', colorClass: 'text-orange-400', bgClass: 'bg-orange-500/15' },
+  LIMIT: { symbol: '\u230A\u230B', colorClass: 'text-indigo-400', bgClass: 'bg-indigo-500/15' },
+  UNION: { symbol: '\u222A', colorClass: 'text-red-400', bgClass: 'bg-red-500/15' },
+  INTERSECT: { symbol: '\u2229', colorClass: 'text-red-300', bgClass: 'bg-red-400/15' },
+  EXCEPT: { symbol: '\u2212', colorClass: 'text-red-200', bgClass: 'bg-red-300/15' },
+  AGGREGATE: { symbol: '\u03A3', colorClass: 'text-pink-300', bgClass: 'bg-pink-400/15' },
+  SUBQUERY: { symbol: '\u2282', colorClass: 'text-violet-400', bgClass: 'bg-violet-500/15' },
 };
 
 // ============================================================================
@@ -72,10 +73,10 @@ const operationStyles: Record<OperationType, { symbol: string; colorClass: strin
  * Gets the display configuration for an operation type.
  *
  * @param type - The operation type
- * @returns Symbol and color class for the operation
+ * @returns Symbol and color classes for the operation
  */
-function getOperationStyle(type: OperationType): { symbol: string; colorClass: string } {
-  return operationStyles[type] || { symbol: '?', colorClass: 'bg-gray-500' };
+function getOperationStyle(type: OperationType): { symbol: string; colorClass: string; bgClass: string } {
+  return operationStyles[type] || { symbol: '?', colorClass: 'text-gray-400', bgClass: 'bg-gray-500/15' };
 }
 
 /**
@@ -102,13 +103,12 @@ function formatRowCount(count: number): string {
  * Renders a single node in the execution plan tree.
  *
  * Features:
+ * - Compact design with minimal visual footprint
  * - Operation-specific symbols and colors
  * - Active state highlighting with pulsing animation
  * - Selection state visual feedback
- * - Row count display (input/output)
  * - Truncated condition/expression display
- * - Table name for TABLE_SCAN nodes
- * - Column list for PROJECTION nodes
+ * - Row count output only (simpler than input/output)
  *
  * @example
  * ```tsx
@@ -127,143 +127,75 @@ function PlanNodeComponent({ data, selected }: NodeProps<PlanNodeData>) {
   const { node, isActive, isComplete } = data;
   const opStyle = getOperationStyle(node.type);
 
+  // Get compact label
+  const label = node.tableName || node.label;
+  const hasCondition = node.condition && node.condition.length > 0;
+
   return (
     <motion.div
-      initial={{ scale: 0.8, opacity: 0 }}
+      initial={{ scale: 0.9, opacity: 0 }}
       animate={{
-        scale: isActive ? 1.05 : 1,
+        scale: isActive ? 1.02 : 1,
         opacity: 1,
       }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.15 }}
       className={cn(
-        'min-w-[160px] rounded-lg border-2 bg-panel shadow-lg',
-        'transition-all duration-200',
-        isActive && 'border-accent ring-2 ring-accent/30',
-        selected && !isActive && 'border-blue-500',
-        !isActive && !selected && 'border-border'
+        'min-w-[120px] max-w-[160px] rounded-md border bg-panel shadow-md',
+        'transition-all duration-150',
+        isActive && 'border-accent ring-1 ring-accent/40',
+        selected && !isActive && 'border-blue-400',
+        !isActive && !selected && 'border-border/80'
       )}
     >
       {/* Incoming data handle (from children) */}
       <Handle
         type="target"
         position={Position.Bottom}
-        className="!bg-accent !w-3 !h-3 !border-2 !border-panel"
+        className="!bg-accent !w-2 !h-2 !border-2 !border-panel"
       />
 
-      {/* Header with symbol */}
+      {/* Header - compact */}
       <div
         className={cn(
-          'flex items-center gap-2 px-3 py-2 rounded-t-lg',
-          opStyle.colorClass,
-          'bg-opacity-20'
+          'flex items-center gap-1.5 px-2 py-1.5 rounded-t-md',
+          opStyle.bgClass
         )}
       >
-        <span className="text-lg font-bold">{opStyle.symbol}</span>
-        <span className="text-sm font-medium truncate">{node.label}</span>
+        <span className={cn('text-sm font-bold', opStyle.colorClass)}>{opStyle.symbol}</span>
+        <span className="text-xs font-medium truncate flex-1">{label}</span>
+        {node.outputRowCount !== undefined && (
+          <span className="text-[10px] text-muted whitespace-nowrap">
+            {formatRowCount(node.outputRowCount)}
+          </span>
+        )}
       </div>
 
-      {/* Details */}
-      <div className="px-3 py-2 space-y-1">
-        {/* Condition/expression */}
-        {node.condition && (
+      {/* Condition - only if present, very compact */}
+      {hasCondition && (
+        <div className="px-2 py-1 border-t border-border/50">
           <p
-            className="text-xs font-mono text-muted truncate"
+            className="text-[10px] font-mono text-muted truncate"
             title={node.condition}
           >
             {node.condition}
           </p>
-        )}
+        </div>
+      )}
 
-        {/* Table name for scans */}
-        {node.tableName && (
-          <p className="text-xs text-muted">
-            Table:{' '}
-            <span className="text-foreground font-mono">{node.tableName}</span>
-          </p>
-        )}
-
-        {/* Row counts */}
-        {(node.inputRowCount !== undefined || node.outputRowCount !== undefined) && (
-          <div className="flex items-center gap-2 text-xs">
-            {node.inputRowCount !== undefined && (
-              <span className="text-muted">
-                In: {formatRowCount(node.inputRowCount)}
-              </span>
-            )}
-            {node.outputRowCount !== undefined && (
-              <>
-                <span className="text-muted">{'\u2192'}</span>
-                <span
-                  className={cn(
-                    node.outputRowCount < (node.inputRowCount || 0)
-                      ? 'text-red-400'
-                      : 'text-green-400'
-                  )}
-                >
-                  Out: {formatRowCount(node.outputRowCount)}
-                </span>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Columns for projection */}
-        {node.columns && node.columns.length > 0 && (
-          <p className="text-xs text-muted truncate">
-            Cols: {node.columns.join(', ')}
-          </p>
-        )}
-
-        {/* Join type */}
-        {node.joinType && (
-          <p className="text-xs text-muted">
-            Type:{' '}
-            <span className="text-foreground">{node.joinType}</span>
-          </p>
-        )}
-
-        {/* Group by columns */}
-        {node.groupByColumns && node.groupByColumns.length > 0 && (
-          <p className="text-xs text-muted truncate">
-            Group: {node.groupByColumns.join(', ')}
-          </p>
-        )}
-
-        {/* Limit/offset */}
-        {node.limit !== undefined && (
-          <p className="text-xs text-muted">
-            Limit: {node.limit}
-            {node.offset !== undefined && node.offset > 0 && (
-              <span>, Offset: {node.offset}</span>
-            )}
-          </p>
-        )}
-
-        {/* Sort order */}
-        {node.orderBy && node.orderBy.length > 0 && (
-          <p className="text-xs text-muted truncate">
-            Order:{' '}
-            {node.orderBy
-              .map((s) => `${s.column} ${s.direction}`)
-              .join(', ')}
-          </p>
-        )}
-      </div>
-
-      {/* Active indicator - pulsing border */}
+      {/* Active indicator - subtle pulsing border */}
       {isActive && (
         <motion.div
-          className="absolute inset-0 rounded-lg border-2 border-accent pointer-events-none"
-          animate={{ opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
+          className="absolute inset-0 rounded-md border border-accent pointer-events-none"
+          animate={{ opacity: [0.4, 0.8, 0.4] }}
+          transition={{ duration: 1.2, repeat: Infinity }}
         />
       )}
 
-      {/* Complete indicator */}
+      {/* Complete indicator - small checkmark */}
       {isComplete && !isActive && (
-        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full flex items-center justify-center">
           <svg
-            className="w-3 h-3 text-white"
+            className="w-2 h-2 text-white"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -282,7 +214,7 @@ function PlanNodeComponent({ data, selected }: NodeProps<PlanNodeData>) {
       <Handle
         type="source"
         position={Position.Top}
-        className="!bg-accent !w-3 !h-3 !border-2 !border-panel"
+        className="!bg-accent !w-2 !h-2 !border-2 !border-panel"
       />
     </motion.div>
   );

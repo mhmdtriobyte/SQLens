@@ -8,7 +8,7 @@
  *
  * @example
  * ```tsx
- * import { PlanTree, PlanNode, NodeDetailPanel } from '@/components/ExecutionPlan';
+ * import { PlanTree, PlanNode } from '@/components/ExecutionPlan';
  *
  * function ExecutionPlanVisualizer() {
  *   return (
@@ -23,11 +23,8 @@
 // Main plan tree visualization
 export { PlanTree } from './PlanTree';
 
-// Individual plan node component
+// Individual plan node component (used internally by PlanTree)
 export { PlanNode } from './PlanNode';
 
 // Data flow animation overlay
 export { DataFlowAnimation } from './DataFlowAnimation';
-
-// Node detail panel for showing intermediate results
-export { NodeDetailPanel } from './NodeDetailPanel';

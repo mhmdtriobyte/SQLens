@@ -318,13 +318,13 @@ export default function Home() {
           </div>
 
           {/* Execution Plan + Step Through (middle) */}
-          <div className="flex-1 flex flex-col overflow-hidden min-h-[150px]">
-            {/* Plan Tree */}
+          <div className="flex-1 flex flex-col overflow-hidden min-h-[150px] bg-background/50">
+            {/* Plan Tree - with extra padding for breathing room */}
             <div className="flex-1 overflow-hidden">
               <PlanTree />
             </div>
 
-            {/* Step Controller */}
+            {/* Compact Step Controller Bar */}
             <StepController />
           </div>
 

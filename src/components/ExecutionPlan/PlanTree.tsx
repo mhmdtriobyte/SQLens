@@ -27,7 +27,6 @@ import 'reactflow/dist/style.css';
 import { useQueryStore, useUIStore } from '@/stores';
 import { PlanNode } from './PlanNode';
 import { DataFlowAnimation } from './DataFlowAnimation';
-import { NodeDetailPanel } from './NodeDetailPanel';
 import { cn } from '@/utils';
 import type { PlanNode as PlanNodeType, QueryPlan } from '@/types';
 
@@ -66,14 +65,14 @@ const nodeTypes = {
 };
 
 /**
- * Layout configuration.
+ * Layout configuration for compact nodes.
  */
 const LAYOUT_CONFIG = {
-  levelHeight: 120,
-  nodeWidth: 180,
-  horizontalGap: 40,
+  levelHeight: 80,
+  nodeWidth: 140,
+  horizontalGap: 24,
   rootX: 400,
-  rootY: 50,
+  rootY: 40,
 };
 
 // ============================================================================
@@ -195,11 +194,11 @@ function planToFlow(
  */
 function EmptyState() {
   return (
-    <div className="h-full flex items-center justify-center bg-background">
+    <div className="h-full flex items-center justify-center bg-background/30">
       <div className="text-center text-muted">
-        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/30 flex items-center justify-center">
+        <div className="w-12 h-12 mx-auto mb-3 rounded-lg bg-muted/20 flex items-center justify-center">
           <svg
-            className="w-8 h-8"
+            className="w-6 h-6 opacity-50"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -212,9 +211,9 @@ function EmptyState() {
             />
           </svg>
         </div>
-        <p className="text-sm font-medium">No query plan to display</p>
-        <p className="text-xs mt-1 max-w-[250px] mx-auto">
-          Write a SQL query and click &quot;Step Through&quot; to visualize the execution plan
+        <p className="text-xs font-medium">No execution plan</p>
+        <p className="text-[10px] mt-1 text-muted/70">
+          Click &quot;Step Through&quot; to visualize
         </p>
       </div>
     </div>
@@ -374,8 +373,6 @@ export function PlanTree({ className }: PlanTreeProps) {
 
         <DataFlowAnimation currentNodeId={currentStepNodeId} />
       </ReactFlow>
-
-      {selectedNodeId && <NodeDetailPanel />}
     </div>
   );
 }

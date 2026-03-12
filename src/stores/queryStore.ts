@@ -399,9 +399,15 @@ export const useQueryStore = create<QueryStoreState & QueryStoreActions & QueryS
       return;
     }
 
-    // Create execution plan
-    const plan = createQueryPlan(parseResult.result?.ast);
-    plan.originalQuery = query;
+    // Only create visual execution plan for SELECT queries
+    const queryType = query.trim().toUpperCase().split(/\s+/)[0];
+    const isSelectQuery = queryType === 'SELECT';
+
+    let plan = null;
+    if (isSelectQuery) {
+      plan = createQueryPlan(parseResult.result?.ast);
+      plan.originalQuery = query;
+    }
 
     set({ isLoading: true, error: null, parseError: null, queryPlan: plan });
 
@@ -430,11 +436,18 @@ export const useQueryStore = create<QueryStoreState & QueryStoreActions & QueryS
   },
 
   /**
-   * Start step-through visualization
+   * Start step-through visualization (SELECT queries only)
    */
   startStepThrough: () => {
     const { query, queryPlan, stepThrough } = get();
     if (!query.trim()) {
+      return;
+    }
+
+    // Only allow step-through for SELECT queries
+    const queryType = query.trim().toUpperCase().split(/\s+/)[0];
+    if (queryType !== 'SELECT') {
+      set({ error: 'Step-through visualization is only available for SELECT queries' });
       return;
     }
 

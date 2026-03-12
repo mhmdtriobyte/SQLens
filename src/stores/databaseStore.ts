@@ -130,15 +130,12 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       // Initialize the SQL.js engine
       await initDatabase();
 
-      // Load the default preset (first available)
-      const defaultPreset = databases[0];
-      if (defaultPreset) {
-        await get().loadPreset(defaultPreset.id);
-      }
-
+      // Start with empty database - user can load presets manually
       set({
         isInitialized: true,
-        isLoading: false
+        isLoading: false,
+        schema: { tables: [] },
+        currentPreset: null
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to initialize database';

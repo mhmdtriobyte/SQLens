@@ -117,6 +117,11 @@ interface UIStoreState {
    * Width of the schema panel in pixels.
    */
   schemaPanelWidth: number;
+
+  /**
+   * Height of the editor panel in pixels.
+   */
+  editorPanelHeight: number;
 }
 
 // ============================================================================
@@ -226,6 +231,11 @@ interface UIStoreActions {
    * Sets the schema panel width in pixels.
    */
   setSchemaPanelWidth: (width: number) => void;
+
+  /**
+   * Sets the editor panel height in pixels.
+   */
+  setEditorPanelHeight: (height: number) => void;
 }
 
 // ============================================================================
@@ -258,6 +268,7 @@ const initialState: UIStoreState = {
   showQueryLibrary: false,
   resultsPanelHeight: 250,
   schemaPanelWidth: 280,
+  editorPanelHeight: 200,
 };
 
 // ============================================================================
@@ -356,6 +367,8 @@ export const useUIStore = create<UIStoreState & UIStoreActions>()(
       setResultsPanelHeight: (height: number) => set({ resultsPanelHeight: height }),
 
       setSchemaPanelWidth: (width: number) => set({ schemaPanelWidth: width }),
+
+      setEditorPanelHeight: (height: number) => set({ editorPanelHeight: height }),
     }),
     {
       name: 'sqlens-ui-storage',
@@ -369,6 +382,7 @@ export const useUIStore = create<UIStoreState & UIStoreActions>()(
         keyboardShortcutsEnabled: state.keyboardShortcutsEnabled,
         schemaPanelWidth: state.schemaPanelWidth,
         resultsPanelHeight: state.resultsPanelHeight,
+        editorPanelHeight: state.editorPanelHeight,
       }),
     }
   )

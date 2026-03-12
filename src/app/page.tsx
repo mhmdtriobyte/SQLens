@@ -21,8 +21,16 @@ import { Loader2, HelpCircle, Github } from 'lucide-react';
 
 export default function Home() {
   const { initialize, isInitialized, isLoading, error } = useDatabaseStore();
-  const { theme, setShowHelp, hasSeenHelp, resultsPanelHeight, setResultsPanelHeight } = useUIStore();
-  const [isResizing, setIsResizing] = useState(false);
+  const {
+    theme,
+    setShowHelp,
+    hasSeenHelp,
+    resultsPanelHeight,
+    setResultsPanelHeight,
+    editorPanelHeight,
+    setEditorPanelHeight
+  } = useUIStore();
+  const [resizingPanel, setResizingPanel] = useState<'editor' | 'results' | null>(null);
 
   // Initialize database on mount
   useEffect(() => {
@@ -50,27 +58,36 @@ export default function Home() {
     }
   }, [isInitialized, hasSeenHelp, setShowHelp]);
 
-  // Handle vertical resize for results panel
-  const handleMouseDown = () => setIsResizing(true);
-
+  // Handle vertical resize for panels
   useEffect(() => {
-    if (!isResizing) return;
+    if (!resizingPanel) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const newHeight = window.innerHeight - e.clientY;
-      setResultsPanelHeight(Math.min(Math.max(newHeight, 100), 500));
+      if (resizingPanel === 'editor') {
+        // Editor resize: measure from header (approx 48px)
+        const headerHeight = 48;
+        const newHeight = e.clientY - headerHeight;
+        setEditorPanelHeight(Math.min(Math.max(newHeight, 100), 400));
+      } else if (resizingPanel === 'results') {
+        const newHeight = window.innerHeight - e.clientY;
+        setResultsPanelHeight(Math.min(Math.max(newHeight, 100), 500));
+      }
     };
 
-    const handleMouseUp = () => setIsResizing(false);
+    const handleMouseUp = () => setResizingPanel(null);
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.cursor = 'ns-resize';
+    document.body.style.userSelect = 'none';
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
     };
-  }, [isResizing, setResultsPanelHeight]);
+  }, [resizingPanel, setEditorPanelHeight, setResultsPanelHeight]);
 
   // Loading state
   if (!isInitialized || isLoading) {
@@ -168,12 +185,26 @@ export default function Home() {
         {/* Main area */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Query Editor (top) */}
-          <div className="h-48 min-h-[150px] border-b border-border">
+          <div
+            className="min-h-[100px] border-b border-border overflow-hidden"
+            style={{ height: editorPanelHeight }}
+          >
             <QueryEditor />
           </div>
 
+          {/* Editor resize handle */}
+          <div
+            onMouseDown={() => setResizingPanel('editor')}
+            className={cn(
+              "h-1.5 bg-border hover:bg-accent cursor-ns-resize transition-colors flex items-center justify-center group",
+              resizingPanel === 'editor' && "bg-accent"
+            )}
+          >
+            <div className="w-8 h-0.5 bg-muted/50 rounded-full group-hover:bg-accent-foreground/50" />
+          </div>
+
           {/* Execution Plan + Step Through (middle) */}
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 flex flex-col overflow-hidden min-h-[150px]">
             {/* Plan Tree */}
             <div className="flex-1 overflow-hidden">
               <PlanTree />
@@ -183,18 +214,20 @@ export default function Home() {
             <StepController />
           </div>
 
-          {/* Resize handle */}
+          {/* Results resize handle */}
           <div
-            onMouseDown={handleMouseDown}
+            onMouseDown={() => setResizingPanel('results')}
             className={cn(
-              "h-1 bg-border hover:bg-accent cursor-ns-resize transition-colors",
-              isResizing && "bg-accent"
+              "h-1.5 bg-border hover:bg-accent cursor-ns-resize transition-colors flex items-center justify-center group",
+              resizingPanel === 'results' && "bg-accent"
             )}
-          />
+          >
+            <div className="w-8 h-0.5 bg-muted/50 rounded-full group-hover:bg-accent-foreground/50" />
+          </div>
 
           {/* Results Panel (bottom) */}
           <div
-            className="overflow-hidden border-t border-border"
+            className="overflow-hidden border-t border-border min-h-[100px]"
             style={{ height: resultsPanelHeight }}
           >
             <ResultsTable />

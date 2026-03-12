@@ -51,3 +51,9 @@ export {
   HelpOverlay,
   KeyboardShortcuts,
 } from './shared';
+
+// ============================================================================
+// File Manager Components
+// ============================================================================
+
+export { FileManager } from './FileManager';

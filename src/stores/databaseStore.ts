@@ -19,8 +19,16 @@ import {
   importCsv as dbImportCsv,
   exportAsSql,
   importFromSql,
-  resetDatabase as dbResetDatabase
+  resetDatabase as dbResetDatabase,
+  executeStatements
 } from '@/engine/database';
+
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+/** LocalStorage key for persisted database state */
+const DB_PERSISTENCE_KEY = 'sqlens-database-state';
 
 // =============================================================================
 // TYPES
@@ -64,6 +72,14 @@ interface DatabaseState {
   reset: () => void;
   /** Clear the current error */
   clearError: () => void;
+  /** Save database state to localStorage */
+  saveDatabaseState: () => void;
+  /** Load saved database state from localStorage */
+  loadSavedDatabaseState: () => Promise<boolean>;
+  /** Check if there's a saved database state */
+  hasSavedDatabaseState: () => boolean;
+  /** Clear saved database state from localStorage */
+  clearSavedDatabaseState: () => void;
 }
 
 // =============================================================================
@@ -283,6 +299,104 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
    */
   clearError: () => {
     set({ error: null });
+  },
+
+  /**
+   * Save the current database state to localStorage
+   * Exports the database as SQL and stores it with metadata
+   */
+  saveDatabaseState: () => {
+    try {
+      const sql = exportAsSql();
+      const state = get();
+
+      const persistedState = {
+        sql,
+        presetId: state.currentPreset?.id ?? null,
+        savedAt: new Date().toISOString()
+      };
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(DB_PERSISTENCE_KEY, JSON.stringify(persistedState));
+      }
+    } catch (error) {
+      console.error('[SQLens] Failed to save database state:', error);
+    }
+  },
+
+  /**
+   * Load saved database state from localStorage
+   * Returns true if state was loaded, false otherwise
+   */
+  loadSavedDatabaseState: async () => {
+    try {
+      if (typeof window === 'undefined') {
+        return false;
+      }
+
+      const saved = localStorage.getItem(DB_PERSISTENCE_KEY);
+      if (!saved) {
+        return false;
+      }
+
+      const persistedState = JSON.parse(saved);
+      if (!persistedState.sql) {
+        return false;
+      }
+
+      // Reset and import the saved SQL
+      dbResetDatabase();
+      executeStatements(persistedState.sql);
+
+      // Refresh schema
+      const schema = getSchema();
+
+      // Try to restore the preset reference if it still exists
+      const preset = persistedState.presetId
+        ? databases.find(p => p.id === persistedState.presetId) ?? null
+        : null;
+
+      set({
+        schema,
+        currentPreset: preset,
+        error: null
+      });
+
+      return true;
+    } catch (error) {
+      console.error('[SQLens] Failed to load saved database state:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Check if there's a saved database state in localStorage
+   */
+  hasSavedDatabaseState: () => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    const saved = localStorage.getItem(DB_PERSISTENCE_KEY);
+    if (!saved) {
+      return false;
+    }
+
+    try {
+      const persistedState = JSON.parse(saved);
+      return !!persistedState.sql;
+    } catch {
+      return false;
+    }
+  },
+
+  /**
+   * Clear saved database state from localStorage
+   */
+  clearSavedDatabaseState: () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(DB_PERSISTENCE_KEY);
+    }
   }
 }));
 

@@ -25,6 +25,7 @@ import {
   AlertCircle,
   Search,
   X,
+  HardDrive,
 } from 'lucide-react';
 import { cn } from '@/utils';
 
@@ -59,6 +60,10 @@ interface SchemaPanelProps {
   onTableSelect?: (tableName: string) => void;
   /** Currently selected table name */
   selectedTable?: string | null;
+  /** Whether table persistence is enabled */
+  persistTables?: boolean;
+  /** Callback when persist tables toggle changes */
+  onPersistTablesChange?: (enabled: boolean) => void;
 }
 
 // ============================================================================
@@ -109,6 +114,8 @@ export function SchemaPanel({
   onReset,
   onTableSelect,
   selectedTable,
+  persistTables = false,
+  onPersistTablesChange,
 }: SchemaPanelProps) {
   // ========================================
   // State
@@ -332,6 +339,31 @@ export function SchemaPanel({
           )}
         </div>
       )}
+
+      {/* Persist Tables Toggle */}
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-[rgb(var(--color-border))]">
+        <div className="flex items-center gap-2 text-xs text-[rgb(var(--color-syntax-comment))]">
+          <HardDrive className="w-3.5 h-3.5" />
+          <span>Persist Tables</span>
+        </div>
+        <button
+          onClick={() => onPersistTablesChange?.(!persistTables)}
+          className={cn(
+            'relative w-8 h-4 rounded-full transition-colors',
+            persistTables
+              ? 'bg-[rgb(var(--color-brand-primary))]'
+              : 'bg-[rgb(var(--color-border))]'
+          )}
+          title={persistTables ? 'Tables will be saved across sessions' : 'Tables will not persist'}
+        >
+          <span
+            className={cn(
+              'absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform',
+              persistTables ? 'translate-x-4' : 'translate-x-0.5'
+            )}
+          />
+        </button>
+      </div>
     </div>
   );
 
@@ -507,7 +539,7 @@ export function SchemaPanel({
       className={cn(
         'h-full flex flex-col',
         'bg-[rgb(var(--color-surface))]',
-        'border-r border-[rgb(var(--color-border))]',
+        'border-l border-[rgb(var(--color-border))]',
         'transition-all duration-200'
       )}
       style={{

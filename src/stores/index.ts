@@ -40,3 +40,12 @@ export {
 
 // UI state management
 export { useUIStore, type Theme, type PanelId } from './uiStore';
+
+// File state management
+export {
+  useFileStore,
+  useActiveFile,
+  useFileCount,
+  useIsFileActive,
+  type SqlFile
+} from './fileStore';

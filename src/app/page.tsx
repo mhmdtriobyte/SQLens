@@ -6,10 +6,17 @@
  * This is the entry point for the SQLens interactive SQL query visualizer.
  * It provides a comprehensive environment for understanding SQL through
  * visualization of query execution plans.
+ *
+ * Layout:
+ * - Left: FileManager (SQL files explorer)
+ * - Center: Editor, Plan Tree, Results
+ * - Right: SchemaPanel (database schema browser)
  */
 
-import { useEffect, useState } from 'react';
-import { useDatabaseStore, useUIStore } from '@/stores';
+import { useEffect, useState, useCallback } from 'react';
+import { useDatabaseStore, useUIStore, useQueryStore } from '@/stores';
+// FileManager uses fileStore internally
+import { FileManager } from '@/components/FileManager';
 import { SchemaPanel } from '@/components/SchemaPanel';
 import { QueryEditor } from '@/components/Editor';
 import { PlanTree } from '@/components/ExecutionPlan';
@@ -20,7 +27,25 @@ import { cn } from '@/utils';
 import { Loader2, HelpCircle, Github } from 'lucide-react';
 
 export default function Home() {
-  const { initialize, isInitialized, isLoading, error } = useDatabaseStore();
+  // Database store
+  const {
+    initialize,
+    isInitialized,
+    isLoading: dbLoading,
+    error: dbError,
+    schema,
+    currentPreset,
+    availablePresets,
+    loadPreset,
+    exportSql,
+    reset: resetDatabase,
+    refreshSchema,
+    saveDatabaseState,
+    loadSavedDatabaseState,
+    hasSavedDatabaseState
+  } = useDatabaseStore();
+
+  // UI store
   const {
     theme,
     setShowHelp,
@@ -28,14 +53,32 @@ export default function Home() {
     resultsPanelHeight,
     setResultsPanelHeight,
     editorPanelHeight,
-    setEditorPanelHeight
+    setEditorPanelHeight,
+    schemaPanelWidth,
+    fileManagerPanelWidth,
+    persistTables,
+    setPersistTables
   } = useUIStore();
+
+  // Query store
+  const { queryResult } = useQueryStore();
+
+  // Local state
   const [resizingPanel, setResizingPanel] = useState<'editor' | 'results' | null>(null);
 
   // Initialize database on mount
   useEffect(() => {
-    initialize();
-  }, [initialize]);
+    const initDb = async () => {
+      await initialize();
+
+      // If persist is enabled and there's saved state, load it
+      if (persistTables && hasSavedDatabaseState()) {
+        await loadSavedDatabaseState();
+      }
+    };
+
+    initDb();
+  }, [initialize, persistTables, hasSavedDatabaseState, loadSavedDatabaseState]);
 
   // Apply theme class to html element
   useEffect(() => {
@@ -57,6 +100,25 @@ export default function Home() {
       setShowHelp(true);
     }
   }, [isInitialized, hasSeenHelp, setShowHelp]);
+
+  // Auto-save database state when queries modify schema (if persist is enabled)
+  useEffect(() => {
+    if (!persistTables || !isInitialized) return;
+
+    // Check if the last query was a schema-modifying statement
+    if (queryResult?.success && queryResult.rowsAffected !== undefined) {
+      // Refresh schema and save
+      refreshSchema();
+      saveDatabaseState();
+    }
+  }, [queryResult, persistTables, isInitialized, refreshSchema, saveDatabaseState]);
+
+  // Save database state when persist is toggled on
+  useEffect(() => {
+    if (persistTables && isInitialized) {
+      saveDatabaseState();
+    }
+  }, [persistTables, isInitialized, saveDatabaseState]);
 
   // Handle vertical resize for panels
   useEffect(() => {
@@ -89,8 +151,40 @@ export default function Home() {
     };
   }, [resizingPanel, setEditorPanelHeight, setResultsPanelHeight]);
 
+  // Handlers
+  const handlePresetChange = useCallback(
+    async (presetId: string) => {
+      await loadPreset(presetId);
+      if (persistTables) {
+        saveDatabaseState();
+      }
+    },
+    [loadPreset, persistTables, saveDatabaseState]
+  );
+
+  const handleExportSql = useCallback(() => {
+    return exportSql();
+  }, [exportSql]);
+
+  const handleReset = useCallback(() => {
+    resetDatabase();
+    if (persistTables) {
+      saveDatabaseState();
+    }
+  }, [resetDatabase, persistTables, saveDatabaseState]);
+
+  const handlePersistTablesChange = useCallback(
+    (enabled: boolean) => {
+      setPersistTables(enabled);
+      if (enabled) {
+        saveDatabaseState();
+      }
+    },
+    [setPersistTables, saveDatabaseState]
+  );
+
   // Loading state
-  if (!isInitialized || isLoading) {
+  if (!isInitialized || dbLoading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div className="flex flex-col items-center gap-6">
@@ -126,12 +220,12 @@ export default function Home() {
   }
 
   // Error state
-  if (error) {
+  if (dbError) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-background">
         <div className="text-center max-w-md">
           <h1 className="text-xl font-semibold text-red-500">Initialization Error</h1>
-          <p className="text-sm text-muted mt-2">{error}</p>
+          <p className="text-sm text-muted mt-2">{dbError}</p>
           <button
             onClick={() => window.location.reload()}
             className="mt-4 px-4 py-2 bg-accent text-accent-foreground rounded-md hover:bg-accent/90"
@@ -179,8 +273,8 @@ export default function Home() {
 
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Schema Panel (left sidebar) */}
-        <SchemaPanel />
+        {/* File Manager (left sidebar) */}
+        <FileManager width={fileManagerPanelWidth} />
 
         {/* Main area */}
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -233,6 +327,21 @@ export default function Home() {
             <ResultsTable />
           </div>
         </div>
+
+        {/* Schema Panel (right sidebar) */}
+        <SchemaPanel
+          schema={schema}
+          currentPreset={currentPreset}
+          availablePresets={availablePresets}
+          isLoading={dbLoading}
+          error={dbError}
+          width={schemaPanelWidth}
+          onPresetChange={handlePresetChange}
+          onExportSql={handleExportSql}
+          onReset={handleReset}
+          persistTables={persistTables}
+          onPersistTablesChange={handlePersistTablesChange}
+        />
       </div>
 
       {/* Overlays and global components */}

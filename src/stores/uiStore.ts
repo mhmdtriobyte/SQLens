@@ -122,6 +122,16 @@ interface UIStoreState {
    * Height of the editor panel in pixels.
    */
   editorPanelHeight: number;
+
+  /**
+   * Whether to persist created tables across sessions.
+   */
+  persistTables: boolean;
+
+  /**
+   * Width of the file manager panel in pixels.
+   */
+  fileManagerPanelWidth: number;
 }
 
 // ============================================================================
@@ -236,6 +246,21 @@ interface UIStoreActions {
    * Sets the editor panel height in pixels.
    */
   setEditorPanelHeight: (height: number) => void;
+
+  /**
+   * Sets whether to persist created tables across sessions.
+   */
+  setPersistTables: (persist: boolean) => void;
+
+  /**
+   * Toggles the persist tables setting.
+   */
+  togglePersistTables: () => void;
+
+  /**
+   * Sets the file manager panel width in pixels.
+   */
+  setFileManagerPanelWidth: (width: number) => void;
 }
 
 // ============================================================================
@@ -269,6 +294,8 @@ const initialState: UIStoreState = {
   resultsPanelHeight: 250,
   schemaPanelWidth: 280,
   editorPanelHeight: 200,
+  persistTables: false,
+  fileManagerPanelWidth: 220,
 };
 
 // ============================================================================
@@ -369,6 +396,13 @@ export const useUIStore = create<UIStoreState & UIStoreActions>()(
       setSchemaPanelWidth: (width: number) => set({ schemaPanelWidth: width }),
 
       setEditorPanelHeight: (height: number) => set({ editorPanelHeight: height }),
+
+      setPersistTables: (persist: boolean) => set({ persistTables: persist }),
+
+      togglePersistTables: () =>
+        set((state) => ({ persistTables: !state.persistTables })),
+
+      setFileManagerPanelWidth: (width: number) => set({ fileManagerPanelWidth: width }),
     }),
     {
       name: 'sqlens-ui-storage',
@@ -383,6 +417,8 @@ export const useUIStore = create<UIStoreState & UIStoreActions>()(
         schemaPanelWidth: state.schemaPanelWidth,
         resultsPanelHeight: state.resultsPanelHeight,
         editorPanelHeight: state.editorPanelHeight,
+        persistTables: state.persistTables,
+        fileManagerPanelWidth: state.fileManagerPanelWidth,
       }),
     }
   )

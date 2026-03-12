@@ -69,16 +69,24 @@ export default function Home() {
   // Initialize database on mount
   useEffect(() => {
     const initDb = async () => {
+      // First initialize the database engine
       await initialize();
 
-      // If persist is enabled and there's saved state, load it
+      // If persist is enabled and there's saved state, load it (replaces default preset)
       if (persistTables && hasSavedDatabaseState()) {
-        await loadSavedDatabaseState();
+        const loaded = await loadSavedDatabaseState();
+        if (!loaded) {
+          // If loading failed (corrupted data), the corrupted data has been cleared
+          // The database is already initialized with default preset, so we're good
+          console.log('[SQLens] Using default preset after failed state restoration');
+        }
       }
     };
 
     initDb();
-  }, [initialize, persistTables, hasSavedDatabaseState, loadSavedDatabaseState]);
+    // Only run on mount - don't re-run when persistTables changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Apply theme class to html element
   useEffect(() => {

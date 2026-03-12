@@ -344,9 +344,25 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
         return false;
       }
 
+      // Validate that SQL contains CREATE TABLE statements (not just INSERTs)
+      const hasCreateTable = persistedState.sql.toLowerCase().includes('create table');
+      if (!hasCreateTable) {
+        console.warn('[SQLens] Saved state has no CREATE TABLE statements, clearing corrupted data');
+        localStorage.removeItem(DB_PERSISTENCE_KEY);
+        return false;
+      }
+
       // Reset and import the saved SQL
       dbResetDatabase();
-      executeStatements(persistedState.sql);
+
+      try {
+        executeStatements(persistedState.sql);
+      } catch (execError) {
+        // If execution fails, clear the corrupted data and return false
+        console.warn('[SQLens] Failed to execute saved SQL, clearing corrupted data:', execError);
+        localStorage.removeItem(DB_PERSISTENCE_KEY);
+        return false;
+      }
 
       // Refresh schema
       const schema = getSchema();
@@ -365,6 +381,10 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       return true;
     } catch (error) {
       console.error('[SQLens] Failed to load saved database state:', error);
+      // Clear potentially corrupted data
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(DB_PERSISTENCE_KEY);
+      }
       return false;
     }
   },

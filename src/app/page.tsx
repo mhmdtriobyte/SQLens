@@ -61,7 +61,7 @@ export default function Home() {
   } = useUIStore();
 
   // Query store
-  const { queryResult } = useQueryStore();
+  const { query, queryResult } = useQueryStore();
 
   // Local state
   const [resizingPanel, setResizingPanel] = useState<'editor' | 'results' | null>(null);
@@ -109,17 +109,29 @@ export default function Home() {
     }
   }, [isInitialized, hasSeenHelp, setShowHelp]);
 
-  // Auto-save database state when queries modify schema (if persist is enabled)
+  // Auto-refresh schema when DDL queries run (CREATE, DROP, ALTER)
   useEffect(() => {
-    if (!persistTables || !isInitialized) return;
+    if (!isInitialized || !queryResult?.success || !query) return;
 
-    // Check if the last query was a schema-modifying statement
-    if (queryResult?.success && queryResult.rowsAffected !== undefined) {
-      // Refresh schema and save
+    // Check if query was a schema-modifying statement (DDL)
+    const queryUpper = query.trim().toUpperCase();
+    const isDDL = queryUpper.startsWith('CREATE ') ||
+                  queryUpper.startsWith('DROP ') ||
+                  queryUpper.startsWith('ALTER ') ||
+                  queryUpper.startsWith('INSERT ') ||
+                  queryUpper.startsWith('UPDATE ') ||
+                  queryUpper.startsWith('DELETE ');
+
+    if (isDDL) {
+      // Always refresh schema to show new/removed tables
       refreshSchema();
-      saveDatabaseState();
+
+      // Only save to localStorage if persist is enabled
+      if (persistTables) {
+        saveDatabaseState();
+      }
     }
-  }, [queryResult, persistTables, isInitialized, refreshSchema, saveDatabaseState]);
+  }, [query, queryResult, persistTables, isInitialized, refreshSchema, saveDatabaseState]);
 
   // Save database state when persist is toggled on
   useEffect(() => {
